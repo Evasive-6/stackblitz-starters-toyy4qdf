@@ -1,51 +1,39 @@
-// API: Retrieve Students Above Threshold
-// ---------------------------------------
-// Task:
-// Implement an API to fetch students whose total marks exceed a given threshold.
-//
-// Endpoint:
-// POST /students/above-threshold
-//
-// Request Body:
-// {
-//   "threshold": <number>
-// }
-//
-// Response:
-// Success: List of students with their names and total marks who meet the criteria.
-// Example:
-// {
-//   "count": 2,
-//   "students": [
-//     { "name": "Alice Johnson", "total": 433 },
-//     { "name": "Bob Smith", "total": 410 }
-//   ]
-// }
-//
-// No Matches:
-// {
-//   "count": 0,
-//   "students": []
-// }
-//
-// Purpose:
-// Help teachers retrieve and analyze student performance efficiently.
-
 
 const express = require('express');
-const { resolve } = require('path');
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const Student = require('./model/Student');
 
 const app = express();
-const port = 3010;
+app.use(bodyParser.json());
+const port = 8989
+mongoose.connect("mongodb+srv://albinshiju285:pov2tBzbVG3yoNA8@cluster0.j5cuo.mongodb.net/student_db", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
 
-app.use(express.static('static'));
+app.post('/stud', async (req, res) => {
+    const { threshold } = req.body;
 
-app.get('/', (req, res) => {
-  res.sendFile(resolve(__dirname, 'pages/index.html'));
+    if (typeof threshold !== 'number') {
+        return res.status(400).json({ error: 'Invalid threshold value' });
+    }
+
+    try {
+        const students = await Student.find({ total: { $gt: threshold } });
+        const response = {
+            count: students.length,
+            students: students.map(student => ({
+                name: student.name,
+                total: student.total
+            }))
+        };
+        res.json(response);
+    } catch (error) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
 });
 
 app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+    console.log('Server is running on port 8989');
 });
-
-
